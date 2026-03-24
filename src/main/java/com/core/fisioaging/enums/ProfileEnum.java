@@ -1,5 +1,7 @@
 package com.core.fisioaging.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum ProfileEnum {
     
     ADMIN("Admin"),
@@ -11,9 +13,9 @@ public enum ProfileEnum {
     ProfileEnum(String descricao) {
         this.descricao = descricao;
     }
-    
+
     @JsonValue
     public String getDescricao() {
-        return descricao;
+        return this.descricao;
     }
 }
