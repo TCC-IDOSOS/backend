@@ -1,18 +1,18 @@
 package com.core.fisioaging.service;
 
-import com.core.fisioaging.model.UserModel;
+import com.core.fisioaging.data.UserData;
 
 import java.util.List;
 
 public interface UserService {
 
-    UserModel create(UserModel user);
+    UserData create(UserData userData);
 
-    UserModel update(Long id, UserModel user);
+    UserData update(Long id, UserData userData);
 
-    UserModel findById(Long id);
+    UserData findById(Long id);
 
-    List<UserModel> findAll();
+    List<UserData> findAll();
 
     void delete(Long id);
 }

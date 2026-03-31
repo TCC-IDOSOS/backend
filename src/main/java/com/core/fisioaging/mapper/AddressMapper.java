@@ -5,9 +5,9 @@ import com.core.fisioaging.model.AddressModel;
 
 import java.util.Objects;
 
-public class AddressMapper {
+public final class AddressMapper {
 
-    public AddressMapper() {
+    private AddressMapper() {
     }
 
     public static AddressData toData(AddressModel model) {
@@ -16,7 +16,6 @@ public class AddressMapper {
         }
 
         AddressData data = new AddressData();
-
         data.setStreetName(model.getStreetName());
         data.setStreetNumber(model.getStreetNumber());
         data.setComplement(model.getComplement());
@@ -33,7 +32,6 @@ public class AddressMapper {
         }
 
         AddressModel model = new AddressModel();
-
         model.setStreetName(data.getStreetName());
         model.setStreetNumber(data.getStreetNumber());
         model.setComplement(data.getComplement());
@@ -42,5 +40,14 @@ public class AddressMapper {
         model.setZipCode(data.getZipCode());
 
         return model;
+    }
+
+    public static void updateModel(AddressModel model, AddressData data) {
+        model.setStreetName(data.getStreetName());
+        model.setStreetNumber(data.getStreetNumber());
+        model.setComplement(data.getComplement());
+        model.setCity(data.getCity());
+        model.setState(data.getState());
+        model.setZipCode(data.getZipCode());
     }
 }

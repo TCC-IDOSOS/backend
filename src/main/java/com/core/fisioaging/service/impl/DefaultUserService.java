@@ -1,61 +1,65 @@
 package com.core.fisioaging.service.impl;
 
-import com.core.fisioaging.dao.UserDAO;
+import com.core.fisioaging.data.UserData;
+import com.core.fisioaging.mapper.UserMapper;
 import com.core.fisioaging.model.UserModel;
+import com.core.fisioaging.repository.UserRepository;
 import com.core.fisioaging.service.UserService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class DefaultUserService implements UserService {
 
-    private final UserDAO userDAO;
+    private final UserRepository userRepository;
 
-    public DefaultUserService(final UserDAO userDAO) {
-        this.userDAO = userDAO;
+    public DefaultUserService(final UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
-    public UserModel create(final UserModel user) {
-        return userDAO.save(user);
+    public UserData create(final UserData userData) {
+        final UserModel userModel = UserMapper.toModel(userData);
+        userModel.setId(null);
+        final UserModel savedUser = userRepository.save(userModel);
+        return UserMapper.toData(savedUser);
     }
 
     @Override
-    public UserModel update(final Long id, final UserModel user) {
-        final UserModel existingUser = userDAO.findById(id)
+    public UserData update(final Long id, final UserData userData) {
+        final UserModel existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Usuário não encontrado para o id: " + id));
 
-        existingUser.setName(user.getName());
-        existingUser.setCpf(user.getCpf());
-        existingUser.setGenre(user.getGenre());
-        existingUser.setBirthDate(user.getBirthDate());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setPassword(user.getPassword());
-        existingUser.setAddress(user.getAddress());
-        existingUser.setProfile(user.getProfile());
-
-        return userDAO.save(existingUser);
+        UserMapper.updateModel(existingUser, userData);
+        final UserModel updatedUser = userRepository.save(existingUser);
+        return UserMapper.toData(updatedUser);
     }
 
     @Override
-    public UserModel findById(final Long id) {
-        return userDAO.findById(id)
+    public UserData findById(final Long id) {
+        final UserModel userModel = userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Usuário não encontrado para o id: " + id));
+        return UserMapper.toData(userModel);
     }
 
     @Override
-    public List<UserModel> findAll() {
-        return userDAO.findAll();
+    public List<UserData> findAll() {
+        return userRepository.findAll()
+                .stream()
+                .map(UserMapper::toData)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void delete(final Long id) {
-        if (!userDAO.existsById(id)) {
+        if (!userRepository.existsById(id)) {
             throw new NoSuchElementException("Usuário não encontrado para o id: " + id);
         }
-
-        userDAO.deleteById(id);
+        userRepository.deleteById(id);
     }
 }

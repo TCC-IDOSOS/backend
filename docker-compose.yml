@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: fisioaging-postgres
+    environment:
+      POSTGRES_DB: fisioaging
+      POSTGRES_USER: fisioaging
+      POSTGRES_PASSWORD: fisioaging
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

@@ -1,6 +1,7 @@
 package com.core.fisioaging.mapper;
 
 import com.core.fisioaging.data.UserData;
+import com.core.fisioaging.model.AddressModel;
 import com.core.fisioaging.model.UserModel;
 
 import java.util.Objects;
@@ -56,6 +57,16 @@ public final class UserMapper {
         model.setEmail(data.getEmail());
         model.setPassword(data.getPassword());
         model.setProfile(data.getProfile());
-        model.setAddress(AddressMapper.toModel(data.getAddress()));
+
+        if (data.getAddress() != null) {
+            AddressModel address = model.getAddress();
+            if (address == null) {
+                address = new AddressModel();
+                model.setAddress(address);
+            }
+            AddressMapper.updateModel(address, data.getAddress());
+        } else {
+            model.setAddress(null);
+        }
     }
 }

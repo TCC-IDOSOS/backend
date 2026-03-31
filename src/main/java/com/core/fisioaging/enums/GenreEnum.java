@@ -1,9 +1,10 @@
 package com.core.fisioaging.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum GenreEnum {
-    
+
     MASCULINO("Masculino"),
     FEMININO("Feminino"),
     OUTRO("Outro"),
@@ -18,5 +19,15 @@ public enum GenreEnum {
     @JsonValue
     public String getDescricao() {
         return this.descricao;
+    }
+
+    @JsonCreator
+    public static GenreEnum fromDescricao(String descricao) {
+        for (GenreEnum g : values()) {
+            if (g.descricao.equals(descricao)) {
+                return g;
+            }
+        }
+        throw new IllegalArgumentException("Gênero inválido: " + descricao);
     }
 }
