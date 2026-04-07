@@ -23,7 +23,6 @@ public final class UserMapper {
         data.setGenre(model.getGenre());
         data.setBirthDate(model.getBirthDate());
         data.setEmail(model.getEmail());
-        data.setPassword(model.getPassword());
         data.setProfile(model.getProfile());
         data.setAddress(AddressMapper.toData(model.getAddress()));
 
@@ -55,7 +54,6 @@ public final class UserMapper {
         model.setGenre(data.getGenre());
         model.setBirthDate(data.getBirthDate());
         model.setEmail(data.getEmail());
-        model.setPassword(data.getPassword());
         model.setProfile(data.getProfile());
 
         if (data.getAddress() != null) {

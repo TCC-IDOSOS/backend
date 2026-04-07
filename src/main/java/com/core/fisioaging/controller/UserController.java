@@ -2,6 +2,7 @@ package com.core.fisioaging.controller;
 
 import com.core.fisioaging.data.UserData;
 import com.core.fisioaging.service.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
+@SecurityRequirement(name = "bearer")
 public class UserController {
 
     private final UserService userService;

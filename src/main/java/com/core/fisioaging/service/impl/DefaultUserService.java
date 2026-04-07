@@ -5,6 +5,7 @@ import com.core.fisioaging.mapper.UserMapper;
 import com.core.fisioaging.model.UserModel;
 import com.core.fisioaging.repository.UserRepository;
 import com.core.fisioaging.service.UserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +18,19 @@ import java.util.stream.Collectors;
 public class DefaultUserService implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DefaultUserService(final UserRepository userRepository) {
+    public DefaultUserService(final UserRepository userRepository,
+                              final PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public UserData create(final UserData userData) {
         final UserModel userModel = UserMapper.toModel(userData);
         userModel.setId(null);
+        userModel.setPassword(passwordEncoder.encode(userData.getPassword()));
         final UserModel savedUser = userRepository.save(userModel);
         return UserMapper.toData(savedUser);
     }
@@ -36,6 +41,11 @@ public class DefaultUserService implements UserService {
                 .orElseThrow(() -> new NoSuchElementException("Usuário não encontrado para o id: " + id));
 
         UserMapper.updateModel(existingUser, userData);
+
+        if (userData.getPassword() != null && !userData.getPassword().isBlank()) {
+            existingUser.setPassword(passwordEncoder.encode(userData.getPassword()));
+        }
+
         final UserModel updatedUser = userRepository.save(existingUser);
         return UserMapper.toData(updatedUser);
     }
