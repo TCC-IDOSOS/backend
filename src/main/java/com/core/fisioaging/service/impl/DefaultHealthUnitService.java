@@ -23,6 +23,7 @@ public class DefaultHealthUnitService implements HealthUnitService {
     @Override
     public HealthUnitData create(final HealthUnitData healthUnitData) {
         final HealthUnitModel model = HealthUnitMapper.toModel(healthUnitData);
+        model.setId(null);
         final HealthUnitModel savedModel = healthUnitRepository.save(model);
         return HealthUnitMapper.toData(savedModel);
     }
