@@ -35,6 +35,6 @@ public class DefaultAuthService implements AuthService {
                 .filter(u -> passwordEncoder.matches(loginData.getPassword(), u.getPassword()))
                 .orElseThrow(InvalidCredentialsException::new);
 
-        return new TokenData(jwtService.generateToken(user.getEmail()), expiration);
+        return new TokenData(jwtService.generateToken(user.getEmail()), expiration, user.getId());
     }
 }

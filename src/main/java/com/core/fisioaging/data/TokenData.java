@@ -9,4 +9,5 @@ public class TokenData {
 
     private String token;
     private long expiresIn;
+    private Long userId;
 }
