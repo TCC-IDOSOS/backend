@@ -20,4 +20,5 @@ public class UserData {
     private String password;
     private ProfileEnum profile;
     private AddressData address;
+    private HealthUnitData healthUnit;
 }

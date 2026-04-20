@@ -33,4 +33,8 @@ public class UserModel {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "address_id")
     private AddressModel address;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "health_unit_id")
+    private HealthUnitModel healthUnit;
 }

@@ -11,4 +11,5 @@ public class AddressData {
     private String city;
     private String state;
     private String zipCode;
+    private String neighborhood;
 }

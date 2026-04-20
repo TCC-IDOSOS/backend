@@ -22,6 +22,7 @@ public final class AddressMapper {
         data.setCity(model.getCity());
         data.setState(model.getState());
         data.setZipCode(model.getZipCode());
+        data.setNeighborhood(model.getNeighborhood());
 
         return data;
     }
@@ -38,6 +39,7 @@ public final class AddressMapper {
         model.setCity(data.getCity());
         model.setState(data.getState());
         model.setZipCode(data.getZipCode());
+        model.setNeighborhood(data.getNeighborhood());
 
         return model;
     }
@@ -49,5 +51,6 @@ public final class AddressMapper {
         model.setCity(data.getCity());
         model.setState(data.getState());
         model.setZipCode(data.getZipCode());
+        model.setNeighborhood(data.getNeighborhood());
     }
 }
