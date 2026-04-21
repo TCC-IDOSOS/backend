@@ -2,9 +2,11 @@ package com.core.fisioaging.mapper;
 
 import com.core.fisioaging.data.UserData;
 import com.core.fisioaging.model.AddressModel;
+import com.core.fisioaging.model.HealthUnitModel;
 import com.core.fisioaging.model.UserModel;
 
-import java.util.Objects;
+import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
 
 public final class UserMapper {
 
@@ -12,7 +14,7 @@ public final class UserMapper {
     }
 
     public static UserData toData(final UserModel model) {
-        if (Objects.isNull(model)) {
+        if (isNull(model)) {
             return null;
         }
 
@@ -25,12 +27,13 @@ public final class UserMapper {
         data.setEmail(model.getEmail());
         data.setProfile(model.getProfile());
         data.setAddress(AddressMapper.toData(model.getAddress()));
+        data.setHealthUnit(HealthUnitMapper.toData(model.getHealthUnit()));
 
         return data;
     }
 
     public static UserModel toModel(final UserData data) {
-        if (Objects.isNull(data)) {
+        if (isNull(data)) {
             return null;
         }
 
@@ -44,6 +47,7 @@ public final class UserMapper {
         model.setPassword(data.getPassword());
         model.setProfile(data.getProfile());
         model.setAddress(AddressMapper.toModel(data.getAddress()));
+        model.setHealthUnit(HealthUnitMapper.toModel(data.getHealthUnit()));
 
         return model;
     }
@@ -56,9 +60,9 @@ public final class UserMapper {
         model.setEmail(data.getEmail());
         model.setProfile(data.getProfile());
 
-        if (data.getAddress() != null) {
+        if (nonNull(data.getAddress())) {
             AddressModel address = model.getAddress();
-            if (address == null) {
+            if (nonNull(address)) {
                 address = new AddressModel();
                 model.setAddress(address);
             }

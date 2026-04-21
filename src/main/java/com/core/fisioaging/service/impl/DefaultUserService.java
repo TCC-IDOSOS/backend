@@ -4,19 +4,24 @@ import com.core.fisioaging.data.UserData;
 import com.core.fisioaging.mapper.UserMapper;
 import com.core.fisioaging.model.UserModel;
 import com.core.fisioaging.repository.UserRepository;
+import com.core.fisioaging.service.HealthUnitService;
 import com.core.fisioaging.service.UserService;
+import jakarta.annotation.Resource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class DefaultUserService implements UserService {
 
+    @Resource
+    private HealthUnitService healthUnitService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -31,6 +36,9 @@ public class DefaultUserService implements UserService {
         final UserModel userModel = UserMapper.toModel(userData);
         userModel.setId(null);
         userModel.setPassword(passwordEncoder.encode(userData.getPassword()));
+        if (Objects.nonNull(userData.getHealthUnit())) {
+            userModel.setHealthUnit(healthUnitService.findByCnpj(userData.getHealthUnit().getCnpj()));
+        }
         final UserModel savedUser = userRepository.save(userModel);
         return UserMapper.toData(savedUser);
     }
@@ -39,11 +47,14 @@ public class DefaultUserService implements UserService {
     public UserData update(final Long id, final UserData userData) {
         final UserModel existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Usuário não encontrado para o id: " + id));
-
         UserMapper.updateModel(existingUser, userData);
 
         if (userData.getPassword() != null && !userData.getPassword().isBlank()) {
             existingUser.setPassword(passwordEncoder.encode(userData.getPassword()));
+        }
+
+        if (Objects.nonNull(userData.getHealthUnit())) {
+            existingUser.setHealthUnit(healthUnitService.findByCnpj(userData.getHealthUnit().getCnpj()));
         }
 
         final UserModel updatedUser = userRepository.save(existingUser);

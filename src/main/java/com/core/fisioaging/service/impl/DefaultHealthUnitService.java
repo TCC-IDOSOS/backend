@@ -6,9 +6,12 @@ import com.core.fisioaging.mapper.HealthUnitMapper;
 import com.core.fisioaging.model.HealthUnitModel;
 import com.core.fisioaging.repository.HealthUnitRepository;
 import com.core.fisioaging.service.HealthUnitService;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +25,9 @@ public class DefaultHealthUnitService implements HealthUnitService {
 
     @Override
     public HealthUnitData create(final HealthUnitData healthUnitData) {
+        if (BooleanUtils.isFalse(isValid(healthUnitData))) {
+            throw new RuntimeException("Invalid health unit data");
+        }
         final HealthUnitModel model = HealthUnitMapper.toModel(healthUnitData);
         model.setId(null);
         final HealthUnitModel savedModel = healthUnitRepository.save(model);
@@ -62,5 +68,18 @@ public class DefaultHealthUnitService implements HealthUnitService {
         }
 
         healthUnitRepository.deleteById(id);
+    }
+
+    @Override
+    public HealthUnitModel findByCnpj(String cnpj) {
+        if (StringUtils.isBlank(cnpj)) return null;
+
+        return healthUnitRepository
+                .findByCnpj(cnpj)
+                .orElse(null);
+    }
+
+    private boolean isValid(HealthUnitData healthUnitData) {
+        return Objects.nonNull(healthUnitData) && StringUtils.isNotBlank(healthUnitData.getCnpj());
     }
 }
