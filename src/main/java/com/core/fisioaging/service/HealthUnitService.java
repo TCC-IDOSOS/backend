@@ -1,6 +1,7 @@
 package com.core.fisioaging.service;
 
 import com.core.fisioaging.data.HealthUnitData;
+import com.core.fisioaging.model.HealthUnitModel;
 
 import java.util.List;
 
@@ -15,4 +16,6 @@ public interface HealthUnitService {
     List<HealthUnitData> findAll();
 
     void delete(Long id);
+
+    HealthUnitModel findByCnpj(String cnpj);
 }

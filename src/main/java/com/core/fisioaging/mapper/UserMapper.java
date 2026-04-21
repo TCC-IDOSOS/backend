@@ -70,16 +70,5 @@ public final class UserMapper {
         } else {
             model.setAddress(null);
         }
-
-        if (nonNull(data.getHealthUnit())) {
-            HealthUnitModel helthUnitModel = model.getHealthUnit();
-            if (nonNull(helthUnitModel)) {
-                helthUnitModel = new HealthUnitModel();
-                model.setHealthUnit(helthUnitModel);
-            }
-            HealthUnitMapper.updateModel(helthUnitModel, data.getHealthUnit());
-        } else {
-            model.setHealthUnit(null);
-        }
     }
 }
