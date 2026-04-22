@@ -1,0 +1,2 @@
+ALTER TABLE test_execution
+ALTER COLUMN weight TYPE FLOAT;
