@@ -1,6 +1,7 @@
 package com.core.fisioaging.data;
 
 import com.core.fisioaging.enums.GenreEnum;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
 
 import java.util.List;
@@ -15,6 +16,10 @@ public class TestUploadData {
     private Integer total_repeticoes_app;
     private GenreEnum sexo;
     private Integer idade;
+
+    // TODO: remove peso alias once mobile migrates to massa_kg
+    @JsonAlias({"peso"})
     private Double massa_kg;
+
     private List<TestRecordData> registros;
 }
