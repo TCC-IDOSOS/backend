@@ -1,0 +1,4 @@
+ALTER TABLE test_execution
+ADD COLUMN genre VARCHAR(255),
+ADD COLUMN age INTEGER,
+ADD COLUMN weight NUMERIC(5,2);
