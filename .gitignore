@@ -34,3 +34,9 @@ target/
 
 # Claude
 .claude/
+
+# Python (lambdas/)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
