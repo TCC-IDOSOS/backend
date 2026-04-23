@@ -1,5 +1,6 @@
 package com.core.fisioaging.controller;
 
+import com.core.fisioaging.data.TestExecutionSummaryData;
 import com.core.fisioaging.data.TestUploadData;
 import com.core.fisioaging.data.TestUploadResponseData;
 import com.core.fisioaging.model.TestExecutionModel;
@@ -19,6 +20,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -64,6 +66,31 @@ public class TestUploadController {
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
+    }
+
+    // TODO (next iteration): suportar paginação e filtros (tipo de teste, intervalo de datas) — HU-014.
+    @GetMapping("/tests")
+    public ResponseEntity<List<TestExecutionSummaryData>> listTests(@RequestParam("email") String email) {
+        List<TestExecutionSummaryData> tests = testExecutionRepository
+                .findByUserEmailOrderByCreatedAtDesc(email)
+                .stream()
+                .map(TestUploadController::toSummary)
+                .toList();
+        return ResponseEntity.ok(tests);
+    }
+
+    private static TestExecutionSummaryData toSummary(TestExecutionModel m) {
+        TestExecutionSummaryData d = new TestExecutionSummaryData();
+        d.setId(m.getId());
+        d.setTestType(m.getTestType());
+        d.setTestDateTime(m.getTestDateTime());
+        d.setStatus(m.getStatus() != null ? m.getStatus().name() : null);
+        d.setCreatedAt(m.getCreatedAt());
+        d.setUpdatedAt(m.getUpdatedAt());
+        d.setTotalRepetitionsApp(m.getTotalRepetitionsApp());
+        d.setRawS3Key(m.getRawS3Key());
+        d.setProcessedS3Key(m.getProcessedS3Key());
+        return d;
     }
 
     // TODO (next iteration): parse the Lambda output and persist to Resultado_Teste.
