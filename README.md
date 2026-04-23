@@ -1,3 +1,15 @@
+## ⚙️ Configuração
+
+A aplicação requer as seguintes variáveis de ambiente para conectar ao Amazon S3 (onde os JSONs brutos dos testes são enviados pelo backend e os JSONs processados são gravados pelo Lambda):
+
+- `AWS_S3_BUCKET` — nome do bucket. Default em dev: `fisioaging-tests`.
+- `AWS_S3_REGION` — região do bucket. Default em dev: `us-east-1`.
+- Credenciais AWS via cadeia padrão do SDK: variáveis `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`, arquivo `~/.aws/credentials`, ou IAM role (em ECS/EC2). Não há credenciais embutidas no código.
+
+Demais propriedades em `src/main/resources/application.properties`.
+
+---
+
 📌 User API Documentation
 📍 Base URL: http://localhost:8080
 
