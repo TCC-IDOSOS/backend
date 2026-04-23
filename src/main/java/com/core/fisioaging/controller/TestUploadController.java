@@ -6,6 +6,7 @@ import com.core.fisioaging.data.TestUploadResponseData;
 import com.core.fisioaging.model.TestExecutionModel;
 import com.core.fisioaging.repository.TestExecutionRepository;
 import com.core.fisioaging.service.TestUploadService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/users")
+@SecurityRequirement(name = "bearer")
 public class TestUploadController {
 
     private static final Logger log = LoggerFactory.getLogger(TestUploadController.class);
