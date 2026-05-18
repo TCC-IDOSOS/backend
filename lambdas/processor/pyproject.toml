@@ -1,5 +1,5 @@
 [project]
-name = "marcha-processor"
+name = "test-processor"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [

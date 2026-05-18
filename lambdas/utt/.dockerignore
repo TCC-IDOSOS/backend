@@ -1,9 +1,0 @@
-tests/
-fixtures/
-.venv/
-__pycache__/
-.pytest_cache/
-*.pyc
-README.md
-deploy.md
-.git

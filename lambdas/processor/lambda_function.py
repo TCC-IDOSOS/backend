@@ -1,23 +1,15 @@
 """
-AWS Lambda handler for UTT signal processing.
+AWS Lambda handler for test signal processing.
 
-Triggered by S3 ObjectCreated events on raw/users/**/*.json (configured outside
-the code). For each record:
-  1. Skip if /utt/ is not a path segment of the key (cheap key-based filter).
+Triggered by S3 ObjectCreated events on raw/users/**/*.json. Dispatches to the
+UTT or MARCHA pipeline based on the test-type segment in the key. For each record:
+  1. Identify test type from key segment (utt / marcha). Skip if unknown.
   2. Idempotency: skip if the swapped processed key already exists.
-  3. Read object metadata, GET payload, sanity-check tipo_teste matches the key.
-  4. Run process_utt; on ValueError write a sibling .error.json (do not raise);
-     on any other exception, log the traceback and re-raise so Lambda retries.
+  3. Read object metadata, GET payload, sanity-check tipo_teste matches the segment.
+  4. Run the dispatched processor; on ValueError write a sibling .error.json
+     (do not raise); on any other exception, log the traceback and re-raise so
+     Lambda retries.
   5. Write the result JSON to the swapped processed key.
-
-# TODO: HU-XX (post-MVP) — notify backend when processing completes so it can
-# populate TestExecutionModel.processedS3Key. Options: HTTPS webhook, or a
-# second S3 event notification on processed/ triggering a backend endpoint.
-
-# TODO: when a MARCHA Lambda is added, both lambdas will receive all
-# raw/users/ events. Current key-based filter handles this, but consider
-# splitting buckets or using S3 Object Tags + EventBridge rules if traffic
-# grows.
 """
 
 import json
@@ -28,7 +20,8 @@ from urllib.parse import unquote_plus
 import boto3
 from botocore.exceptions import ClientError
 
-from processor import process_utt
+from processor_utt import process_utt
+from processor_marcha import process_marcha
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +31,11 @@ s3 = boto3.client("s3")
 
 RAW_PREFIX = "raw/"
 PROCESSED_PREFIX = "processed/"
-UTT_SEGMENT = "utt"
+
+TEST_DISPATCH = {
+    "utt":    ("UTT",    process_utt),
+    "marcha": ("MARCHA", process_marcha),
+}
 
 
 def _swap_to_processed(raw_key: str) -> str:
@@ -47,9 +44,12 @@ def _swap_to_processed(raw_key: str) -> str:
     return PROCESSED_PREFIX + raw_key[len(RAW_PREFIX):]
 
 
-def _key_is_utt(raw_key: str) -> bool:
+def _identify_test_type(raw_key: str):
     parts = raw_key.lower().split("/")
-    return UTT_SEGMENT in parts
+    for segment, dispatch in TEST_DISPATCH.items():
+        if segment in parts:
+            return dispatch
+    return None, None
 
 
 def _exists(bucket: str, key: str) -> bool:
@@ -72,13 +72,29 @@ def _put_json(bucket: str, key: str, body: dict) -> None:
     )
 
 
+def _success_log_fields(test_type: str, result: dict) -> dict:
+    if test_type == "UTT":
+        return {
+            "cycles": len(result["cycles"]),
+            "total_repeticoes": result["total_repeticoes"],
+        }
+    if test_type == "MARCHA":
+        return {
+            "n_peaks": result["n_peaks"],
+            "strategy": result["strategy"],
+        }
+    return {}
+
+
 def _process_record(bucket: str, raw_key: str) -> None:
     log_extra = {"bucket": bucket, "raw_key": raw_key}
 
-    if not _key_is_utt(raw_key):
-        logger.info("skipping non-utt object", extra=log_extra)
+    test_type, processor = _identify_test_type(raw_key)
+    if test_type is None:
+        logger.info("skipping non-test object", extra=log_extra)
         return
 
+    log_extra["test_type"] = test_type
     out_key = _swap_to_processed(raw_key)
     err_key = out_key + ".error.json"
     log_extra["out_key"] = out_key
@@ -91,7 +107,6 @@ def _process_record(bucket: str, raw_key: str) -> None:
     metadata = head.get("Metadata", {}) or {}
     log_extra.update(
         user_email=metadata.get("user-email"),
-        test_type=metadata.get("test-type"),
         test_execution_id=metadata.get("test-execution-id"),
     )
 
@@ -101,15 +116,15 @@ def _process_record(bucket: str, raw_key: str) -> None:
     payload_test_type = str(payload.get("tipo_teste", "")).strip().upper()
     t0 = time.perf_counter()
     try:
-        if payload_test_type != "UTT":
+        if payload_test_type != test_type:
             raise ValueError(
-                f"key has /utt/ segment but payload tipo_teste={payload_test_type!r}"
+                f"key segment indicates {test_type} but payload tipo_teste={payload_test_type!r}"
             )
-        result = process_utt(payload)
+        result = processor(payload)
     except ValueError as e:
         elapsed_ms = int((time.perf_counter() - t0) * 1000)
         logger.warning(
-            "process_utt rejected payload",
+            "processor rejected payload",
             extra={**log_extra, "elapsed_ms": elapsed_ms, "error": str(e)},
         )
         _put_json(bucket, err_key, {"error": str(e), "raw_key": raw_key})
@@ -119,12 +134,7 @@ def _process_record(bucket: str, raw_key: str) -> None:
     _put_json(bucket, out_key, result)
     logger.info(
         "processed",
-        extra={
-            **log_extra,
-            "elapsed_ms": elapsed_ms,
-            "cycles": len(result["cycles"]),
-            "total_repeticoes": result["total_repeticoes"],
-        },
+        extra={**log_extra, "elapsed_ms": elapsed_ms, **_success_log_fields(test_type, result)},
     )
 
 
