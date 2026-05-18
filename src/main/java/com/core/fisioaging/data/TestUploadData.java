@@ -14,6 +14,8 @@ public class TestUploadData {
     private String sensor;
     private Integer frequencia;
     private Integer total_repeticoes_app;
+    private Integer id_profissional;
+    private String email_profissional;
     private GenreEnum sexo;
     private Integer idade;
 

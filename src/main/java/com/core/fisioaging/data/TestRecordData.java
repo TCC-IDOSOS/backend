@@ -9,4 +9,5 @@ public class TestRecordData {
     private Double x;
     private Double y;
     private Double z;
+    private String sensor;
 }
