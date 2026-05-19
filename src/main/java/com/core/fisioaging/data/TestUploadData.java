@@ -24,4 +24,5 @@ public class TestUploadData {
     private Double massa_kg;
 
     private List<TestRecordData> registros;
+    private String unidadeSaudeCnpj;
 }

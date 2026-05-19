@@ -60,4 +60,8 @@ public class TestExecutionModel {
     @Column(name = "weight")
     private Double weight;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "health_unit_id")
+    private HealthUnitModel healthUnit;
+
 }

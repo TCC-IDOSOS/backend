@@ -3,14 +3,18 @@ package com.core.fisioaging.service.impl;
 import com.core.fisioaging.data.TestUploadData;
 import com.core.fisioaging.data.TestUploadResponseData;
 import com.core.fisioaging.enums.TestExecutionStatusEnum;
+import com.core.fisioaging.model.HealthUnitModel;
 import com.core.fisioaging.model.TestExecutionModel;
 import com.core.fisioaging.model.UserModel;
 import com.core.fisioaging.repository.TestExecutionRepository;
 import com.core.fisioaging.repository.UserRepository;
+import com.core.fisioaging.service.HealthUnitService;
 import com.core.fisioaging.service.TestUploadService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,27 +24,32 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class DefaultTestUploadService implements TestUploadService {
+
     private final UserRepository userRepository;
     private final TestExecutionRepository testExecutionRepository;
     private final S3Client s3Client;
     private final ObjectMapper objectMapper;
     private final String bucketName;
+    private final HealthUnitService healthUnitService;
 
     public DefaultTestUploadService(
             UserRepository userRepository,
             TestExecutionRepository testExecutionRepository,
             S3Client s3Client,
             ObjectMapper objectMapper,
-            @Value("${aws.s3.bucket}") String bucketName
+            @Value("${aws.s3.bucket}") String bucketName,
+            HealthUnitService healthUnitService
     ) {
         this.userRepository = userRepository;
         this.testExecutionRepository = testExecutionRepository;
         this.s3Client = s3Client;
         this.objectMapper = objectMapper;
         this.bucketName = bucketName;
+        this.healthUnitService = healthUnitService;
     }
 
     @Override
@@ -66,6 +75,7 @@ public class DefaultTestUploadService implements TestUploadService {
         execution.setGenre(data.getSexo());
         execution.setAge(data.getIdade());
         execution.setWeight(data.getMassa_kg());
+        setHealthUnit(execution, data.getUnidadeSaudeCnpj());
 
         execution = testExecutionRepository.save(execution);
 
@@ -145,6 +155,15 @@ public class DefaultTestUploadService implements TestUploadService {
             return objectMapper.writeValueAsString(data);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Error serializing test payload.", e);
+        }
+    }
+
+    private void setHealthUnit(TestExecutionModel execution, String cnpj) {
+        if (StringUtils.isNotBlank(cnpj)) {
+            HealthUnitModel healthUnitModel = healthUnitService.findByCnpj(cnpj);
+            if (Objects.nonNull(healthUnitModel)) {
+                execution.setHealthUnit(healthUnitModel);
+            }
         }
     }
 }
