@@ -17,6 +17,7 @@ public class UserData {
     private GenreEnum genre;
     private LocalDate birthDate;
     private String email;
+    private String phone;
     private String password;
     private ProfileEnum profile;
     private AddressData address;

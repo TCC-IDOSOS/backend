@@ -25,6 +25,7 @@ public final class UserMapper {
         data.setGenre(model.getGenre());
         data.setBirthDate(model.getBirthDate());
         data.setEmail(model.getEmail());
+        data.setPhone(model.getPhone());
         data.setProfile(model.getProfile());
         data.setAddress(AddressMapper.toData(model.getAddress()));
         data.setHealthUnit(HealthUnitMapper.toData(model.getHealthUnit()));
@@ -44,6 +45,7 @@ public final class UserMapper {
         model.setGenre(data.getGenre());
         model.setBirthDate(data.getBirthDate());
         model.setEmail(data.getEmail());
+        model.setPhone(data.getPhone());
         model.setPassword(data.getPassword());
         model.setProfile(data.getProfile());
         model.setAddress(AddressMapper.toModel(data.getAddress()));
@@ -58,6 +60,7 @@ public final class UserMapper {
         model.setGenre(data.getGenre());
         model.setBirthDate(data.getBirthDate());
         model.setEmail(data.getEmail());
+        model.setPhone(data.getPhone());
         model.setProfile(data.getProfile());
 
         if (nonNull(data.getAddress())) {

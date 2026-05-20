@@ -25,6 +25,7 @@ public class UserModel {
     private LocalDate birthDate;
 
     private String email;
+    private String phone;
     private String password;
 
     @Enumerated(EnumType.STRING)
