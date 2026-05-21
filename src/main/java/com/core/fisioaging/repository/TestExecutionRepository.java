@@ -4,12 +4,18 @@ import com.core.fisioaging.model.TestExecutionModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TestExecutionRepository extends JpaRepository<TestExecutionModel, Long> {
 
     List<TestExecutionModel> findByUserEmailOrderByCreatedAtDesc(String email);
 
+    long countByCreatedAtAfter(LocalDateTime since);
+
+    @Query("SELECT t.testType, COUNT(t) FROM TestExecutionModel t GROUP BY t.testType")
+    List<Object[]> countGroupByTestType();
+    
     @Query("""
         SELECT te
         FROM TestExecutionModel te
