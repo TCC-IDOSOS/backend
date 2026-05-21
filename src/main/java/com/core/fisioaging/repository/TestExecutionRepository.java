@@ -15,4 +15,16 @@ public interface TestExecutionRepository extends JpaRepository<TestExecutionMode
 
     @Query("SELECT t.testType, COUNT(t) FROM TestExecutionModel t GROUP BY t.testType")
     List<Object[]> countGroupByTestType();
+    
+    @Query("""
+        SELECT te
+        FROM TestExecutionModel te
+        WHERE te.rawS3Key IS NOT NULL
+        AND NOT EXISTS (
+            SELECT tr.id
+            FROM TestResultModel tr
+            WHERE tr.testExecution.id = te.id
+        )
+    """)
+    List<TestExecutionModel> findExecutionsWithoutResult();
 }
