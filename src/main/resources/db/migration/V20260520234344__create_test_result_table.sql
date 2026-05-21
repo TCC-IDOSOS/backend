@@ -8,7 +8,7 @@ CREATE TABLE test_result (
     patient_sex VARCHAR(50) NOT NULL,
 
     test_type VARCHAR(50) NOT NULL,
-    test_date_time VARCHAR(50) NOT NULL,
+    test_date_time TIMESTAMP NOT NULL,
 
     health_unit_id BIGINT NOT NULL,
 
