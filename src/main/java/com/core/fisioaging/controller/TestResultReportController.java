@@ -2,6 +2,7 @@ package com.core.fisioaging.controller;
 
 
 import com.core.fisioaging.service.impl.TestResultReportService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ContentDisposition;
@@ -15,6 +16,7 @@ import java.time.LocalDate;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/reports")
+@SecurityRequirement(name = "bearer")
 public class TestResultReportController {
 
     private final TestResultReportService testResultReportService;
