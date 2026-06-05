@@ -135,7 +135,13 @@ public class TestResultSyncService {
         result.setTestType(execution.getTestType());
         result.setTestDateTime(parseTestDateTime(execution.getTestDateTime()));
 
-        result.setHealthUnit(execution.getHealthUnit());
+        // A execução nem sempre tem unidade gravada; nesse caso usa a do usuário
+        // (mesmo critério do relatório no front).
+        result.setHealthUnit(
+                execution.getHealthUnit() != null
+                        ? execution.getHealthUnit()
+                        : execution.getUser().getHealthUnit()
+        );
 
         result.setTotalRepetitions(awsResult.getTotalRepeticoes());
         result.setAverageHeight(awsResult.getAlturaMedia());
