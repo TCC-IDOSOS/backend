@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -31,22 +33,40 @@ public class TestResultSyncService {
     private final TestResultRepository testResultRepository;
     private final S3Client s3Client;
     private final ObjectMapper objectMapper;
+    private final PlatformTransactionManager transactionManager;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
 
-    @Transactional
     public void syncNewResultsFromS3() {
-        List<TestExecutionModel> executions = testExecutionRepository.findExecutionsWithoutResult();
+        List<Long> executionIds = testExecutionRepository.findExecutionsWithoutResult()
+                .stream()
+                .map(TestExecutionModel::getId)
+                .toList();
 
-        log.info("Found {} test executions without result.", executions.size());
+        log.info("Found {} test executions without result.", executionIds.size());
 
-        for (TestExecutionModel execution : executions) {
-            processExecution(execution);
+        // Cada execução roda na própria transação: uma que falhe é descartada
+        // (rollback isolado) sem derrubar o restante do sync.
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        for (Long executionId : executionIds) {
+            try {
+                transactionTemplate.executeWithoutResult(status -> processExecution(executionId));
+            } catch (Exception e) {
+                log.error("Error processing result for execution {}. Skipping.", executionId, e);
+            }
         }
     }
 
-    private void processExecution(final TestExecutionModel execution) {
+    private void processExecution(final Long executionId) {
+        TestExecutionModel execution = testExecutionRepository.findById(executionId).orElse(null);
+
+        if (execution == null) {
+            return;
+        }
+
         if (testResultRepository.existsByTestExecutionId(execution.getId())) {
             return;
         }
@@ -60,33 +80,32 @@ public class TestResultSyncService {
 
         String processedKey = rawKey.replaceFirst("^raw/", "processed/");
 
+        final TestResultAwsResponse awsResult;
         try {
-            TestResultAwsResponse awsResult = readResultFromS3(processedKey);
-
-            TestResultModel result = buildTestResult(execution, awsResult);
-
-            testResultRepository.save(result);
-
-            log.info(
-                    "Saved test result for execution {} from S3 key {}.",
-                    execution.getId(),
-                    processedKey
-            );
-
+            awsResult = readResultFromS3(processedKey);
         } catch (NoSuchKeyException e) {
+            // Resultado ainda não processado: não é erro, tenta de novo no próximo ciclo.
             log.info(
                     "Processed result not found yet for execution {}. Key: {}",
                     execution.getId(),
                     processedKey
             );
-        } catch (Exception e) {
-            log.error(
-                    "Error processing result for execution {}. Key: {}",
-                    execution.getId(),
-                    processedKey,
-                    e
+            return;
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to read processed result from S3. Key: " + processedKey, e
             );
         }
+
+        TestResultModel result = buildTestResult(execution, awsResult);
+
+        testResultRepository.save(result);
+
+        log.info(
+                "Saved test result for execution {} from S3 key {}.",
+                execution.getId(),
+                processedKey
+        );
     }
 
     private TestResultAwsResponse readResultFromS3(final String processedKey) throws IOException {
