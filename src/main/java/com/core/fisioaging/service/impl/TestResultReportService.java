@@ -23,6 +23,9 @@ public class TestResultReportService {
 
     private final TestResultRepository testResultRepository;
 
+    private static final String TEST_TYPE_UTT = "UTT";
+    private static final String TEST_TYPE_MARCHA = "MARCHA";
+
     @Transactional(readOnly = true)
     public byte[] generatePdfReport(
             final LocalDate startDate,
@@ -128,21 +131,70 @@ public class TestResultReportService {
         if (results.isEmpty()) {
             addEmptyRow(table);
         } else {
+            double averageUtt = averageRepetitions(results, TEST_TYPE_UTT);
+            double averageMarcha = averageRepetitions(results, TEST_TYPE_MARCHA);
+
             for (TestResultModel result : results) {
                 addCell(table, result.getPatientName());
                 addCell(table, result.getPatientAge());
-                addCell(table, result.getPatientSex());
-                addCell(table, result.getTestType());
+                addCell(table, result.getPatientSex() != null ? result.getPatientSex().getDescricao() : null);
+                addCell(table, testTypeLabel(result.getTestType()));
                 addCell(table, formatDateTime(result.getTestDateTime()));
                 addCell(table, result.getHealthUnit() != null ? result.getHealthUnit().getName() : null);
                 addCell(table, result.getTotalRepetitions());
                 addCell(table, formatDecimal(result.getAverageHeight()));
                 addCell(table, formatDecimal(result.getCadence()));
-                addCell(table, result.getTestClassification());
+                addCell(table, classify(result, averageUtt, averageMarcha));
             }
         }
 
         document.add(table);
+    }
+
+    private double averageRepetitions(final List<TestResultModel> results, final String testType) {
+        int sum = 0;
+        int count = 0;
+
+        for (TestResultModel result : results) {
+            if (testType.equalsIgnoreCase(result.getTestType())) {
+                sum += result.getTotalRepetitions() != null ? result.getTotalRepetitions() : 0;
+                count++;
+            }
+        }
+
+        return count > 0 ? (double) sum / count : 0;
+    }
+
+    /**
+     * Classificação relativa à média do conjunto filtrado (mesmo critério do relatório no front):
+     * acima de +10% da média -> "Acima da Média"; abaixo de -10% -> "Abaixo da Média"; senão "Na Média".
+     */
+    private String classify(
+            final TestResultModel result,
+            final double averageUtt,
+            final double averageMarcha
+    ) {
+        int repetitions = result.getTotalRepetitions() != null ? result.getTotalRepetitions() : 0;
+
+        double reference = TEST_TYPE_UTT.equalsIgnoreCase(result.getTestType())
+                ? averageUtt
+                : (TEST_TYPE_MARCHA.equalsIgnoreCase(result.getTestType()) ? averageMarcha : 0);
+
+        if (reference > 0) {
+            if (repetitions > reference * 1.1) {
+                return "Acima da Média";
+            }
+            if (repetitions < reference * 0.9) {
+                return "Abaixo da Média";
+            }
+            return "Na Média";
+        }
+
+        return result.getTestClassification() != null ? result.getTestClassification() : "Não Avaliado";
+    }
+
+    private String testTypeLabel(final String testType) {
+        return TEST_TYPE_MARCHA.equalsIgnoreCase(testType) ? "Marcha Estacionária" : testType;
     }
 
     private void addHeader(final PdfPTable table, final String value) {

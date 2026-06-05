@@ -5,6 +5,7 @@ import com.core.fisioaging.model.TestExecutionModel;
 import com.core.fisioaging.model.TestResultModel;
 import com.core.fisioaging.repository.TestExecutionRepository;
 import com.core.fisioaging.repository.TestResultRepository;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -34,6 +36,8 @@ public class TestResultSyncService {
     private final S3Client s3Client;
     private final ObjectMapper objectMapper;
     private final PlatformTransactionManager transactionManager;
+
+    private static final String TEST_TYPE_MARCHA = "MARCHA";
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -143,14 +147,92 @@ public class TestResultSyncService {
                         : execution.getUser().getHealthUnit()
         );
 
-        result.setTotalRepetitions(awsResult.getTotalRepeticoes());
-        result.setAverageHeight(awsResult.getAlturaMedia());
-        result.setCadence(awsResult.getCadencia());
+        applyMetrics(result, execution, awsResult);
         result.setTestClassification(awsResult.getClassificacao());
 
         result.setCreatedAt(LocalDateTime.now());
 
         return result;
+    }
+
+    /**
+     * Reproduz o cálculo que o relatório do front faz por teste:
+     * - repetições: repeticoes_completas ?? n_peaks ?? peaks_t_s.length
+     * - altura média: MARCHA usa a média dos picos (mediaZ); demais usam altura_media
+     * - cadência: cadencia ?? cadence_cycles_min
+     */
+    private void applyMetrics(
+            final TestResultModel result,
+            final TestExecutionModel execution,
+            final TestResultAwsResponse aws
+    ) {
+        boolean isMarcha = TEST_TYPE_MARCHA.equalsIgnoreCase(execution.getTestType());
+
+        result.setTotalRepetitions(resolveRepetitions(aws));
+
+        result.setAverageHeight(isMarcha ? computeMediaZ(aws) : aws.getAlturaMedia());
+
+        result.setCadence(firstNonNull(aws.getCadencia(), aws.getCadenceCyclesMin()));
+    }
+
+    private Integer resolveRepetitions(final TestResultAwsResponse aws) {
+        if (aws.getRepeticoesCompletas() != null) {
+            return aws.getRepeticoesCompletas();
+        }
+        if (aws.getNPeaks() != null) {
+            return aws.getNPeaks();
+        }
+        if (aws.getPeaksTS() != null) {
+            return aws.getPeaksTS().size();
+        }
+        return 0;
+    }
+
+    private Double computeMediaZ(final TestResultAwsResponse aws) {
+        List<Double> peaksZ;
+
+        if (aws.getCycles() != null && !aws.getCycles().isEmpty()) {
+            peaksZ = aws.getCycles().stream()
+                    .map(c -> c.getWPhoneZPeakDegS() != null ? c.getWPhoneZPeakDegS() : 0.0)
+                    .toList();
+        } else {
+            peaksZ = extractDoubles(aws.getPeaksValueDegS());
+        }
+
+        if (peaksZ.isEmpty()) {
+            return 0.0;
+        }
+
+        double sum = peaksZ.stream().mapToDouble(v -> Math.abs(v != null ? v : 0.0)).sum();
+        return sum / peaksZ.size();
+    }
+
+    /** peaks_value_deg_s pode ser um array JSON ou uma string contendo um array JSON. */
+    private List<Double> extractDoubles(final JsonNode node) {
+        if (node == null || node.isNull()) {
+            return List.of();
+        }
+
+        JsonNode array = node;
+        if (node.isTextual()) {
+            try {
+                array = objectMapper.readTree(node.asText());
+            } catch (Exception e) {
+                return List.of();
+            }
+        }
+
+        if (array == null || !array.isArray()) {
+            return List.of();
+        }
+
+        List<Double> values = new ArrayList<>();
+        array.forEach(n -> values.add(n.asDouble(0.0)));
+        return values;
+    }
+
+    private Double firstNonNull(final Double first, final Double second) {
+        return first != null ? first : second;
     }
 
     public static LocalDateTime parseTestDateTime(final String value) {
