@@ -356,7 +356,11 @@ def process_marcha(payload: dict, bundle=BUNDLE) -> dict:
         slope = (Vm_end - Vm_ini) / (tB - tA)
 
     N = int(v_pred.size)
-    cadence = N / 2.0
+    # Cadence from the mean inter-peak interval (60 / mean ISI), so it reflects the
+    # actual capture length. The previous `N / 2.0` hardcoded a 120 s (2-minute)
+    # test from the 2MST notebook and under-reported cadence by duration/2min on
+    # shorter captures (e.g. ~4x low on a 30 s test).
+    cadence = 60.0 / float(np.mean(np.diff(t_pred))) if t_pred.size >= 2 else np.nan
     Vm_total = float(np.mean(v_pred))
     std_vel  = float(np.std(v_pred, ddof=0))
     cv_vel   = float(std_vel / (Vm_total + 1e-9))
