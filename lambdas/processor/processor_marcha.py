@@ -328,9 +328,14 @@ def process_marcha(payload: dict, bundle=BUNDLE) -> dict:
         raise ValueError("No predicted peaks to summarize.")
 
     threshold = 11.0
-    t_start, t_end = 0.0, 120.0
-    duration = float(t_end - t_start)
 
+    # NOTE: the fatigue-strategy block below (vel_ini/vel_end/slope/strategy)
+    # assumes a 120 s (2-minute 2MST) capture. The windows are absolute seconds,
+    # so on shorter captures (e.g. 30 s) the "end" window (100-120 s) is empty
+    # -> Vm_end=NaN -> strategy="undefined", vel_end/slope=None, and vel_ini
+    # covers most of the test instead of just its start. These fields are not
+    # consumed by the dashboard today. To support shorter tests, make the
+    # windows fractions of the real signal duration.
     ini_t0, ini_t1 = 0.0, 20.0
     end_t0, end_t1 = 100.0, 120.0
 
