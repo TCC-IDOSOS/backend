@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,11 +75,32 @@ public class TestUploadController {
     @GetMapping("/tests")
     public ResponseEntity<List<TestExecutionSummaryData>> listTests(@RequestParam("email") String email) {
         List<TestExecutionSummaryData> tests = testExecutionRepository
-                .findByUserEmailOrderByCreatedAtDesc(email)
+                .findByUserEmailAndIsDeletedFalseOrderByCreatedAtDesc(email)
                 .stream()
                 .map(TestUploadController::toSummary)
                 .toList();
         return ResponseEntity.ok(tests);
+    }
+
+    // Soft delete: marca o teste como excluído (is_deleted = true) em vez de removê-lo.
+    @DeleteMapping("/tests/{id}")
+    public ResponseEntity<Void> deleteTest(
+            @PathVariable("id") Long id,
+            @RequestParam("email") String email) {
+        Optional<TestExecutionModel> maybe = testExecutionRepository.findById(id);
+        if (maybe.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        TestExecutionModel execution = maybe.get();
+        if (!execution.getUser().getEmail().equals(email)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        if (Boolean.FALSE.equals(execution.getIsDeleted())) {
+            execution.setIsDeleted(true);
+            execution.setUpdatedAt(LocalDateTime.now());
+            testExecutionRepository.save(execution);
+        }
+        return ResponseEntity.noContent().build();
     }
 
     private static TestExecutionSummaryData toSummary(TestExecutionModel m) {
