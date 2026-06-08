@@ -1,0 +1,2 @@
+ALTER TABLE test_execution
+ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE;

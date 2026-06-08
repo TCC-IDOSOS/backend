@@ -24,6 +24,12 @@ public class TestResultSpecification {
                     criteriaBuilder.between(root.get("testDateTime"), startDate, endDate)
             );
 
+            // Exclui resultados de testes que foram excluídos (soft delete).
+            predicates = criteriaBuilder.and(
+                    predicates,
+                    criteriaBuilder.isFalse(root.get("testExecution").get("isDeleted"))
+            );
+
             if (patientName != null && !patientName.isBlank()) {
                 predicates = criteriaBuilder.and(
                         predicates,
