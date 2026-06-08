@@ -7,4 +7,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface TestResultRepository extends JpaRepository<TestResultModel, Long>, JpaSpecificationExecutor<TestResultModel> {
 
     boolean existsByTestExecutionId(Long testExecutionId);
+
+    void deleteByTestExecutionId(Long testExecutionId);
+
+    void deleteByTestExecution_User_Id(Long userId);
 }

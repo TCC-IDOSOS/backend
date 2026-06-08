@@ -9,20 +9,19 @@ import java.util.List;
 
 public interface TestExecutionRepository extends JpaRepository<TestExecutionModel, Long> {
 
-    List<TestExecutionModel> findByUserEmailAndIsDeletedFalseOrderByCreatedAtDesc(String email);
+    List<TestExecutionModel> findByUserEmailOrderByCreatedAtDesc(String email);
 
-    long countByIsDeletedFalse();
+    void deleteByUser_Id(Long userId);
 
-    long countByCreatedAtAfterAndIsDeletedFalse(LocalDateTime since);
+    long countByCreatedAtAfter(LocalDateTime since);
 
-    @Query("SELECT t.testType, COUNT(t) FROM TestExecutionModel t WHERE t.isDeleted = false GROUP BY t.testType")
+    @Query("SELECT t.testType, COUNT(t) FROM TestExecutionModel t GROUP BY t.testType")
     List<Object[]> countGroupByTestType();
 
     @Query("""
         SELECT te
         FROM TestExecutionModel te
         WHERE te.rawS3Key IS NOT NULL
-        AND te.isDeleted = false
         AND NOT EXISTS (
             SELECT tr.id
             FROM TestResultModel tr

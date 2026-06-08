@@ -5,6 +5,7 @@ import com.core.fisioaging.data.TestUploadData;
 import com.core.fisioaging.data.TestUploadResponseData;
 import com.core.fisioaging.model.TestExecutionModel;
 import com.core.fisioaging.repository.TestExecutionRepository;
+import com.core.fisioaging.repository.TestResultRepository;
 import com.core.fisioaging.service.TestUploadService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -21,7 +23,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,16 +36,19 @@ public class TestUploadController {
 
     private final TestUploadService testUploadService;
     private final TestExecutionRepository testExecutionRepository;
+    private final TestResultRepository testResultRepository;
     private final S3Client s3Client;
     private final String bucketName;
 
     public TestUploadController(
             TestUploadService testUploadService,
             TestExecutionRepository testExecutionRepository,
+            TestResultRepository testResultRepository,
             S3Client s3Client,
             @Value("${aws.s3.bucket}") String bucketName) {
         this.testUploadService = testUploadService;
         this.testExecutionRepository = testExecutionRepository;
+        this.testResultRepository = testResultRepository;
         this.s3Client = s3Client;
         this.bucketName = bucketName;
     }
@@ -75,14 +79,15 @@ public class TestUploadController {
     @GetMapping("/tests")
     public ResponseEntity<List<TestExecutionSummaryData>> listTests(@RequestParam("email") String email) {
         List<TestExecutionSummaryData> tests = testExecutionRepository
-                .findByUserEmailAndIsDeletedFalseOrderByCreatedAtDesc(email)
+                .findByUserEmailOrderByCreatedAtDesc(email)
                 .stream()
                 .map(TestUploadController::toSummary)
                 .toList();
         return ResponseEntity.ok(tests);
     }
 
-    // Soft delete: marca o teste como excluído (is_deleted = true) em vez de removê-lo.
+    // Hard delete: remove o resultado (FK) e depois a execução do teste.
+    @Transactional
     @DeleteMapping("/tests/{id}")
     public ResponseEntity<Void> deleteTest(
             @PathVariable("id") Long id,
@@ -95,11 +100,8 @@ public class TestUploadController {
         if (!execution.getUser().getEmail().equals(email)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        if (Boolean.FALSE.equals(execution.getIsDeleted())) {
-            execution.setIsDeleted(true);
-            execution.setUpdatedAt(LocalDateTime.now());
-            testExecutionRepository.save(execution);
-        }
+        testResultRepository.deleteByTestExecutionId(id);
+        testExecutionRepository.delete(execution);
         return ResponseEntity.noContent().build();
     }
 

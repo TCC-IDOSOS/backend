@@ -30,9 +30,9 @@ public class DefaultDashboardService implements DashboardService {
     public DashboardStatsData getStats() {
         final DashboardStatsData stats = new DashboardStatsData();
         stats.setTotalPatients(userRepository.countByProfile(ProfileEnum.PACIENTE));
-        stats.setTotalTests(testExecutionRepository.countByIsDeletedFalse());
+        stats.setTotalTests(testExecutionRepository.count());
         stats.setTestsByType(buildTestsByType());
-        stats.setTestsLast30Days(testExecutionRepository.countByCreatedAtAfterAndIsDeletedFalse(LocalDateTime.now().minusDays(30)));
+        stats.setTestsLast30Days(testExecutionRepository.countByCreatedAtAfter(LocalDateTime.now().minusDays(30)));
         return stats;
     }
 

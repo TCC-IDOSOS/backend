@@ -64,7 +64,4 @@ public class TestExecutionModel {
     @JoinColumn(name = "health_unit_id")
     private HealthUnitModel healthUnit;
 
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
-
 }

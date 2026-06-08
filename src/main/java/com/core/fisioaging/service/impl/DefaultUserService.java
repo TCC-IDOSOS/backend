@@ -3,6 +3,8 @@ package com.core.fisioaging.service.impl;
 import com.core.fisioaging.data.UserData;
 import com.core.fisioaging.mapper.UserMapper;
 import com.core.fisioaging.model.UserModel;
+import com.core.fisioaging.repository.TestExecutionRepository;
+import com.core.fisioaging.repository.TestResultRepository;
 import com.core.fisioaging.repository.UserRepository;
 import com.core.fisioaging.service.HealthUnitService;
 import com.core.fisioaging.service.UserService;
@@ -24,11 +26,17 @@ public class DefaultUserService implements UserService {
     private HealthUnitService healthUnitService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TestExecutionRepository testExecutionRepository;
+    private final TestResultRepository testResultRepository;
 
     public DefaultUserService(final UserRepository userRepository,
-                              final PasswordEncoder passwordEncoder) {
+                              final PasswordEncoder passwordEncoder,
+                              final TestExecutionRepository testExecutionRepository,
+                              final TestResultRepository testResultRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.testExecutionRepository = testExecutionRepository;
+        this.testResultRepository = testResultRepository;
     }
 
     @Override
@@ -81,6 +89,9 @@ public class DefaultUserService implements UserService {
         if (!userRepository.existsById(id)) {
             throw new NoSuchElementException("Usuário não encontrado para o id: " + id);
         }
+        // Remove resultados e execuções de teste do usuário antes (FK RESTRICT).
+        testResultRepository.deleteByTestExecution_User_Id(id);
+        testExecutionRepository.deleteByUser_Id(id);
         userRepository.deleteById(id);
     }
 }
