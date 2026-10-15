@@ -4,6 +4,11 @@
 
 Trabalho de Conclusão de Curso do curso de Tecnologia em Análise e Desenvolvimento de Sistemas — Setor de Educação Profissional e Tecnológica (SEPT) da **Universidade Federal do Paraná (UFPR)**, desenvolvido em parceria com a Pós-graduação em Educação Física da UFPR e integrado ao ecossistema do projeto **TecnoAging**.
 
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-6DB33F)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791)
+![AWS](https://img.shields.io/badge/AWS-S3%20%7C%20Lambda-FF9900)
+![Python](https://img.shields.io/badge/Python-processamento-3776AB)
 
 ---
 
